@@ -1,0 +1,78 @@
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk import pos_tag
+from nltk.corpus import wordnet
+from nltk.chunk import RegexpParser
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+
+# Define some example intents and their corresponding responses
+intents = {
+    'greeting': ['hello', 'hi', 'hey', 'howdy'],
+    'farewell': ['bye', 'goodbye', 'see you later'],
+    'weather': ['What is the weather like today?', 'Tell me about the weather', 'How is the weather?']
+}
+
+responses = {
+    'greeting': 'Hello! How can I help you?',
+    'farewell': 'Goodbye! Have a great day!',
+    'weather': 'I am sorry, but I am a simple chatbot and do not have the capability to provide real-time weather information.'
+}
+
+# Preprocess input text
+def preprocess(text):
+    tokens = word_tokenize(text)
+    stop_words = set(stopwords.words('english'))
+    tokens = [word for word in tokens if word.lower() not in stop_words]
+    return tokens
+
+# Perform intent recognition
+def recognize_intent(tokens):
+    for intent, keywords in intents.items():
+        if any(keyword in tokens for keyword in keywords):
+            return intent
+    return 'unknown'
+
+# Extract entities using part-of-speech tagging
+def extract_entities(tokens):
+    tagged_tokens = pos_tag(tokens)
+    chunk_pattern = "NP: {<DT>?<JJ>*<NN>}"
+    chunk_parser = RegexpParser(chunk_pattern)
+    tree = chunk_parser.parse(tagged_tokens)
+    
+    entities = []
+    for subtree in tree.subtrees():
+        if subtree.label() == 'NP':
+            entity = ' '.join(word for word, pos in subtree.leaves())
+            entities.append(entity)
+    
+    return entities
+
+# Main chatbot function
+def chatbot(input_text):
+    # Preprocess input
+    input_tokens = preprocess(input_text)
+    
+    # Recognize intent
+    intent = recognize_intent(input_tokens)
+    
+    # Extract entities
+    entities = extract_entities(input_tokens)
+    
+    # Generate response
+    if intent != 'unknown':
+        response = responses[intent]
+    else:
+        response = "I'm sorry, I don't understand that."
+
+    return response
+
+# Example usage
+user_input = input("User: ")
+response = chatbot(user_input)
+print("Bot:", response)

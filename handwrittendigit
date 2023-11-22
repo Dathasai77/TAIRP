@@ -1,0 +1,69 @@
+pip install tensorflow numpy matplotlib pillow
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image, ImageOps
+
+# Load and preprocess the MNIST dataset
+mnist = tf.keras.datasets.mnist
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+
+# Normalize pixel values to be between 0 and 1
+train_images, test_images = train_images / 255.0, test_images / 255.0
+
+# Build the neural network model
+model = models.Sequential([
+    layers.Flatten(input_shape=(28, 28)),
+    layers.Dense(128, activation='relu'),
+    layers.Dropout(0.2),
+    layers.Dense(10, activation='softmax')
+])
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Train the model
+model.fit(train_images, train_labels, epochs=5)
+
+# Function to predict a digit from an image
+def predict_digit(image_path):
+    # Load and preprocess the image
+    img = Image.open(image_path).convert('L')  # Convert to grayscale
+    img = ImageOps.invert(img)  # Invert colors
+    img = img.resize((28, 28))  # Resize to match model input size
+    img_array = np.array(img) / 255.0  # Normalize pixel values
+    img_array = img_array.reshape(1, 28, 28)  # Reshape to match model input shape
+
+    # Make the prediction
+    prediction = model.predict(img_array)
+    digit = np.argmax(prediction)
+
+    return digit
+
+# Function to allow the user to draw a digit and predict it
+def draw_and_predict_digit():
+    plt.imshow(np.zeros((28, 28)), cmap='gray')  # Initialize a blank canvas
+    plt.title("Draw a digit and press Enter to predict")
+    plt.show(block=False)
+
+    # Wait for the user to draw a digit
+    drawn_digit = input("Enter to predict: ")
+
+    # Close the drawing window
+    plt.close()
+
+    # Save the drawn digit as an image
+    plt.imshow(np.zeros((28, 28)), cmap='gray')  # Initialize a blank canvas
+    plt.axis('off')
+    plt.savefig('drawn_digit.png', bbox_inches='tight', pad_inches=0)
+
+    # Predict the digit
+    predicted_digit = predict_digit('drawn_digit.png')
+
+    print(f"Predicted digit: {predicted_digit}")
+
+# Allow the user to draw and predict digits
+draw_and_predict_digit()
